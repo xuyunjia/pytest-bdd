@@ -274,17 +274,25 @@ class Feature(object):
         feature.description = textwrap.dedent(parsed_feature.get("description", ""))  # To be dedented
         feature.name = parsed_feature["name"]
 
-        for parsed_scenario in parsed_feature["children"]:
-            assert parsed_scenario["type"] == "Scenario"
-            scenario = Scenario(
-                feature=features,
-                name=parsed_scenario["name"],
-                line_number=parsed_scenario["location"]["line"],
-                tags=parsed_scenario["tags"],  # TODO: Check this
-            )
+        for parsed_child in parsed_feature["children"]:
+            if parsed_child["type"] == "Background":
+                backround = Background(feature=feature, line_number=parsed_child["location"]["line"])
+                feature.background = backround
+                target = backround
+            elif parsed_child["type"] == "Scenario":
+                scenario = Scenario(
+                    feature=feature,
+                    name=parsed_child["name"],
+                    line_number=parsed_child["location"]["line"],
+                    tags=parsed_child["tags"],  # TODO: Check this
+                )
+                feature.scenarios[scenario.name] = scenario
+                target = scenario
+            else:
+                raise NotImplementedError("Unknowsn type {}".format(repr(parsed_child["type"])))
 
             last_step_type = None
-            for parsed_step in parsed_scenario["steps"]:
+            for parsed_step in parsed_child["steps"]:
                 assert parsed_step["type"] == "Step"
 
                 type = parsed_step["keyword"].rstrip().lower()
@@ -300,8 +308,8 @@ class Feature(object):
                     line_number=parsed_step["location"]["line"],
                     keyword=keyword,
                 )
-                scenario.add_step(step)
-            feature.scenarios[scenario.name] = scenario
+                target.add_step(step)
+
         return feature
 
     def __init__(self, basedir, filename, encoding="utf-8", strict_gherkin=True, load=True):
