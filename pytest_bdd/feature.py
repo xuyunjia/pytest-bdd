@@ -269,7 +269,7 @@ class Feature(object):
 
         # fetch stuff from parsed
         assert parsed_feature["type"] == "Feature"
-        f.description = textwrap.dedent(parsed_feature.get("description", ''))  # To be dedented
+        f.description = textwrap.dedent(parsed_feature.get("description", ""))  # To be dedented
         f.name = parsed_feature["name"]
         for parsed_scenario in parsed_feature["children"]:
             assert parsed_scenario["type"] == "Scenario"
@@ -283,7 +283,7 @@ class Feature(object):
             for parsed_step in parsed_scenario["steps"]:
                 assert parsed_step["type"] == "Step"
                 type = parsed_step["keyword"].rstrip().lower()
-                if type in ('and', 'but'):
+                if type in ("and", "but"):
                     type = last_step_type
                 last_step_type = type
                 keyword = parsed_step["keyword"].rstrip()
