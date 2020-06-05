@@ -258,12 +258,12 @@ class Feature(object):
 
     @classmethod
     def from_gherkin(cls, basedir, filename):
-        f = cls(basedir=basedir, filename=filename, load=False)
+        feature = cls(basedir=basedir, filename=filename, load=False)
 
         # Used for debugging for now
         floaded = cls(basedir=basedir, filename=filename, load=True)
 
-        with io.open(f.filename, encoding="utf-8") as f:
+        with io.open(feature.filename, encoding="utf-8") as f:
             content = f.read()
 
         parser = gherkin.parser.Parser()
@@ -271,13 +271,13 @@ class Feature(object):
         parsed_feature = parsed["feature"]
 
         assert parsed_feature["type"] == "Feature"
-        f.description = textwrap.dedent(parsed_feature.get("description", ""))  # To be dedented
-        f.name = parsed_feature["name"]
+        feature.description = textwrap.dedent(parsed_feature.get("description", ""))  # To be dedented
+        feature.name = parsed_feature["name"]
 
         for parsed_scenario in parsed_feature["children"]:
             assert parsed_scenario["type"] == "Scenario"
             scenario = Scenario(
-                f,
+                feature=features,
                 name=parsed_scenario["name"],
                 line_number=parsed_scenario["location"]["line"],
                 tags=parsed_scenario["tags"],  # TODO: Check this
@@ -301,8 +301,8 @@ class Feature(object):
                     keyword=keyword,
                 )
                 scenario.add_step(step)
-            f.scenarios[scenario.name] = scenario
-        return f
+            feature.scenarios[scenario.name] = scenario
+        return feature
 
     def __init__(self, basedir, filename, encoding="utf-8", strict_gherkin=True, load=True):
         """Parse the feature file.
