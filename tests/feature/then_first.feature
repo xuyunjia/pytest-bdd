@@ -1,2 +1,4 @@
-Scenario: Then first
-	Then it won't work
+Feature:
+
+    Scenario: Then first
+        Then it won't work
