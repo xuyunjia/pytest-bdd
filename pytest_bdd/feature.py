@@ -279,7 +279,7 @@ class Feature(object):
                 backround = Background(feature=feature, line_number=parsed_child["location"]["line"])
                 feature.background = backround
                 target = backround
-            elif parsed_child["type"] == "Scenario":
+            elif parsed_child["type"] in ("Scenario", "ScenarioOutline"):
                 scenario = Scenario(
                     feature=feature,
                     name=parsed_child["name"],
@@ -289,7 +289,7 @@ class Feature(object):
                 feature.scenarios[scenario.name] = scenario
                 target = scenario
             else:
-                raise NotImplementedError("Unknowsn type {}".format(repr(parsed_child["type"])))
+                raise NotImplementedError("Unknown type {}".format(repr(parsed_child["type"])))
 
             last_step_type = None
             for parsed_step in parsed_child["steps"]:
