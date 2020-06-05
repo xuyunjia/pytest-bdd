@@ -24,6 +24,7 @@ one line.
 """
 from __future__ import absolute_import
 
+import io
 from collections import OrderedDict
 from os import path as op
 import codecs
@@ -258,7 +259,7 @@ class Feature(object):
     @classmethod
     def from_gherkin(cls, basedir, filename):
         parser = gherkin.parser.Parser()
-        with codecs.open(filename, encoding="utf-8") as f:
+        with io.open(filename, encoding="utf-8") as f:
             content = f.read()
         parsed = parser.parse(content)
         parsed_feature = parsed["feature"]
