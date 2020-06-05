@@ -258,20 +258,22 @@ class Feature(object):
 
     @classmethod
     def from_gherkin(cls, basedir, filename):
-        parser = gherkin.parser.Parser()
-        with io.open(filename, encoding="utf-8") as f:
-            content = f.read()
-        parsed = parser.parse(content)
-        parsed_feature = parsed["feature"]
-
         f = cls(basedir=basedir, filename=filename, load=False)
+
         # Used for debugging for now
         floaded = cls(basedir=basedir, filename=filename, load=True)
 
-        # fetch stuff from parsed
+        with io.open(f.filename, encoding="utf-8") as f:
+            content = f.read()
+
+        parser = gherkin.parser.Parser()
+        parsed = parser.parse(content)
+        parsed_feature = parsed["feature"]
+
         assert parsed_feature["type"] == "Feature"
         f.description = textwrap.dedent(parsed_feature.get("description", ""))  # To be dedented
         f.name = parsed_feature["name"]
+
         for parsed_scenario in parsed_feature["children"]:
             assert parsed_scenario["type"] == "Scenario"
             scenario = Scenario(
@@ -280,14 +282,17 @@ class Feature(object):
                 line_number=parsed_scenario["location"]["line"],
                 tags=parsed_scenario["tags"],  # TODO: Check this
             )
+
             last_step_type = None
             for parsed_step in parsed_scenario["steps"]:
                 assert parsed_step["type"] == "Step"
+
                 type = parsed_step["keyword"].rstrip().lower()
                 if type in ("and", "but"):
                     type = last_step_type
                 last_step_type = type
                 keyword = parsed_step["keyword"].rstrip()
+
                 step = Step(
                     name=parsed_step["text"],
                     type=type,
