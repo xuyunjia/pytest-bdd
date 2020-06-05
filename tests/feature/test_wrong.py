@@ -87,7 +87,7 @@ def test_verbose_output():
 
     msg, line_number, line, file = excinfo.value.args
 
-    assert line_number == 5
+    assert line_number == 7
     assert line == "When I do it again"
     assert file == os.path.join(os.path.dirname(__file__), "when_after_then.feature")
     assert line in str(excinfo.value)
