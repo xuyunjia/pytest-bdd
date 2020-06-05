@@ -44,7 +44,16 @@ setup(
         "Programming Language :: Python :: 3",
     ]
     + [("Programming Language :: Python :: %s" % x) for x in "2.7 3.5 3.6 3.7 3.8".split()],
-    install_requires=["glob2", "Mako", "parse", "parse_type", "py", "pytest>=4.3", "six>=1.9.0"],
+    install_requires=[
+        "glob2",
+        "Mako",
+        "parse",
+        "parse_type",
+        "py",
+        "pytest>=4.3",
+        "six>=1.9.0",
+        "gherkin-official>=4.1.3",
+    ],
     # the following makes a plugin available to py.test
     entry_points={
         "pytest11": ["pytest-bdd = pytest_bdd.plugin"],

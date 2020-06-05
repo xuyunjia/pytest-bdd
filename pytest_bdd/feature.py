@@ -22,6 +22,7 @@ Syntax example:
 :note: There're no multiline steps, the description of the step must fit in
 one line.
 """
+from __future__ import absolute_import
 
 from collections import OrderedDict
 from os import path as op
@@ -30,6 +31,7 @@ import re
 import sys
 import textwrap
 
+import gherkin.parser
 import glob2
 import six
 
@@ -253,7 +255,50 @@ class Feature(object):
 
     """Feature."""
 
-    def __init__(self, basedir, filename, encoding="utf-8", strict_gherkin=True):
+    @classmethod
+    def from_gherkin(cls, basedir, filename):
+        parser = gherkin.parser.Parser()
+        with codecs.open(filename, encoding="utf-8") as f:
+            content = f.read()
+        parsed = parser.parse(content)
+        parsed_feature = parsed["feature"]
+
+        f = cls(basedir=basedir, filename=filename, load=False)
+        # Used for debugging for now
+        floaded = cls(basedir=basedir, filename=filename, load=True)
+
+        # fetch stuff from parsed
+        assert parsed_feature["type"] == "Feature"
+        f.description = textwrap.dedent(parsed_feature.get("description", ''))  # To be dedented
+        f.name = parsed_feature["name"]
+        for parsed_scenario in parsed_feature["children"]:
+            assert parsed_scenario["type"] == "Scenario"
+            scenario = Scenario(
+                f,
+                name=parsed_scenario["name"],
+                line_number=parsed_scenario["location"]["line"],
+                tags=parsed_scenario["tags"],  # TODO: Check this
+            )
+            last_step_type = None
+            for parsed_step in parsed_scenario["steps"]:
+                assert parsed_step["type"] == "Step"
+                type = parsed_step["keyword"].rstrip().lower()
+                if type in ('and', 'but'):
+                    type = last_step_type
+                last_step_type = type
+                keyword = parsed_step["keyword"].rstrip()
+                step = Step(
+                    name=parsed_step["text"],
+                    type=type,
+                    indent=None,
+                    line_number=parsed_step["location"]["line"],
+                    keyword=keyword,
+                )
+                scenario.add_step(step)
+            f.scenarios[scenario.name] = scenario
+        return f
+
+    def __init__(self, basedir, filename, encoding="utf-8", strict_gherkin=True, load=True):
         """Parse the feature file.
 
         :param str basedir: Feature files base directory.
@@ -269,6 +314,12 @@ class Feature(object):
         self.name = None
         self.tags = set()
         self.examples = Examples()
+        self.description = None
+        self.background = None
+
+        if not load:
+            return
+
         scenario = None
         mode = None
         prev_mode = None
@@ -276,7 +327,6 @@ class Feature(object):
         step = None
         multiline_step = False
         prev_line = None
-        self.background = None
 
         with codecs.open(filename, encoding=encoding) as f:
             content = force_unicode(f.read(), encoding)
@@ -427,7 +477,7 @@ class Feature(object):
         full_name = op.abspath(op.join(base_path, filename))
         feature = features.get(full_name)
         if not feature:
-            feature = Feature(base_path, filename, encoding=encoding, strict_gherkin=strict_gherkin)
+            feature = Feature.from_gherkin(base_path, filename)
             features[full_name] = feature
         return feature
 

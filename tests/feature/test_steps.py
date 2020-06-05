@@ -91,6 +91,7 @@ def test_step_hooks(testdir):
     testdir.makefile(
         ".feature",
         test="""
+    Feature:
     Scenario: When step has hook on failure
         Given I have a bar
         When it fails
@@ -208,6 +209,7 @@ def test_step_trace(testdir):
     testdir.makefile(
         ".feature",
         test="""
+    Feature:
     Scenario: When step has failure
         Given I have a bar
         When it fails
