@@ -289,19 +289,19 @@ class Feature(object):
                 feature.scenarios[scenario.name] = scenario
                 target = scenario
 
-                for parsed_example in parsed_child.get('examples', []):
-                    assert parsed_example['type'] == 'Examples'
-                    if parsed_example['name'] == 'Vertical':
-                        for row in [parsed_example['tableHeader']] + parsed_example['tableBody']:
-                            cells = [cell['value'] for cell in row['cells']]
+                for parsed_example in parsed_child.get("examples", []):
+                    assert parsed_example["type"] == "Examples"
+                    if parsed_example["name"] == "Vertical":
+                        for row in [parsed_example["tableHeader"]] + parsed_example["tableBody"]:
+                            cells = [cell["value"] for cell in row["cells"]]
                             scenario.examples.add_example_row(cells[0], cells[1:])
                     else:
-                        assert parsed_example['name'] == ''
-                        headers = [c['value'] for c in parsed_example['tableHeader']['cells']]
+                        assert parsed_example["name"] == ""
+                        headers = [c["value"] for c in parsed_example["tableHeader"]["cells"]]
 
                         scenario.examples.set_param_names(headers)
-                        for row in parsed_example['tableBody']:
-                            values = [cell['value'] for cell in row['cells']]
+                        for row in parsed_example["tableBody"]:
+                            values = [cell["value"] for cell in row["cells"]]
                             scenario.examples.add_example(values)
             else:
                 raise NotImplementedError("Unknown type {}".format(repr(parsed_child["type"])))
