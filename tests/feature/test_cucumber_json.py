@@ -50,9 +50,11 @@ def test_step_trace(testdir):
             """
     @feature-tag
     Feature: One passing scenario, one failing scenario
+        The description for the feature
 
         @scenario-passing-tag
         Scenario: Passing
+            The description for the scenario
             Given a passing step
             And some other passing step
 
@@ -113,10 +115,10 @@ def test_step_trace(testdir):
     assert result.ret
     expected = [
         {
-            "description": "",
+            "description": "The description for the feature",
             "elements": [
                 {
-                    "description": "",
+                    "description": "The description for the scenario",
                     "id": "test_passing",
                     "keyword": "Scenario",
                     "line": 5,
