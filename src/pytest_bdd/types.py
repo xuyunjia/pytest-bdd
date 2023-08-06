@@ -12,5 +12,7 @@ GIVEN = "given"
 WHEN = "when"
 THEN = "then"
 TAG = "tag"
+SETUP = "setup"
+TEARDOWN = "teardown"
 
 STEP_TYPES = (GIVEN, WHEN, THEN)

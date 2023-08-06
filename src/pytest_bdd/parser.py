@@ -19,6 +19,8 @@ STEP_PREFIXES = [
     ("Examples:", types.EXAMPLES),
     ("Scenario: ", types.SCENARIO),
     ("Background:", types.BACKGROUND),
+    ("Setup:", types.SETUP),
+    ("Teardown:", types.TEARDOWN),
     ("Given ", types.GIVEN),
     ("When ", types.WHEN),
     ("Then ", types.THEN),
@@ -99,11 +101,14 @@ def parse_feature(basedir: str, filename: str, encoding: str = "utf-8") -> Featu
         name=None,
         tags=set(),
         background=None,
+        setup=None,
+        teardown=None,
         description="",
     )
     scenario: ScenarioTemplate | None = None
     mode: str | None = None
     prev_mode = None
+    parent_mode = types.FEATURE
     description: list[str] = []
     step = None
     multiline_step = False
@@ -129,7 +134,7 @@ def parse_feature(basedir: str, filename: str, encoding: str = "utf-8") -> Featu
             continue
         mode = get_step_type(clean_line) or mode
 
-        allowed_prev_mode = (types.BACKGROUND, types.GIVEN, types.WHEN)
+        allowed_prev_mode = (types.BACKGROUND, types.GIVEN, types.WHEN, types.SETUP)
 
         if not scenario and prev_mode not in allowed_prev_mode and mode in types.STEP_TYPES:
             raise exceptions.FeatureError(
@@ -152,6 +157,8 @@ def parse_feature(basedir: str, filename: str, encoding: str = "utf-8") -> Featu
                 )
 
         prev_mode = mode
+        if mode in (types.SCENARIO, types.SCENARIO_OUTLINE, types.BACKGROUND, types.SETUP, types.TEARDOWN):
+            parent_mode = mode
 
         # Remove Feature, Given, When, Then, And
         keyword, parsed_line = parse_line(clean_line)
@@ -166,8 +173,13 @@ def parse_feature(basedir: str, filename: str, encoding: str = "utf-8") -> Featu
                 templated=mode == types.SCENARIO_OUTLINE,
             )
             feature.scenarios[parsed_line] = scenario
-        elif mode == types.BACKGROUND:
-            feature.background = Background(feature=feature, line_number=line_number)
+        elif mode in (types.BACKGROUND, types.SETUP, types.TEARDOWN):
+            if mode == types.BACKGROUND:
+                feature.background = Background(feature=feature, line_number=line_number)
+            elif mode == types.SETUP:
+                feature.setup = Setup(feature=feature, line_number=line_number)
+            elif mode == types.TEARDOWN:
+                feature.teardown = Teardown(feature=feature, line_number=line_number)
         elif mode == types.EXAMPLES:
             mode = types.EXAMPLES_HEADERS
             scenario.examples.line_number = line_number
@@ -178,8 +190,9 @@ def parse_feature(basedir: str, filename: str, encoding: str = "utf-8") -> Featu
             scenario.examples.add_example([l for l in split_line(stripped_line)])
         elif mode and mode not in (types.FEATURE, types.TAG):
             step = Step(name=parsed_line, type=mode, indent=line_indent, line_number=line_number, keyword=keyword)
-            if feature.background and not scenario:
-                feature.background.add_step(step)
+            if parent_mode not in (types.FEATURE, types.SCENARIO, types.SCENARIO_OUTLINE):
+                parent = getattr(feature, parent_mode)
+                parent.add_step(step)
             else:
                 scenario = cast(ScenarioTemplate, scenario)
                 scenario.add_step(step)
@@ -197,8 +210,13 @@ class Feature:
     name: str | None
     tags: set[str]
     background: Background | None
+    setup: Setup | None
+    teardown: Teardown | None
     line_number: int
     description: str
+
+    def add_step_by_mode(self, mode: str) -> None:
+        pass
 
 
 @dataclass
@@ -263,6 +281,8 @@ class Step:
     failed: bool = field(init=False, default=False)
     scenario: ScenarioTemplate | None = field(init=False, default=None)
     background: Background | None = field(init=False, default=None)
+    setup: Setup | None = field(init=False, default=None)
+    teardown: Teardown | None = field(init=False, default=None)
     lines: list[str] = field(init=False, default_factory=list)
 
     def __init__(self, name: str, type: str, indent: int, line_number: int, keyword: str) -> None:
@@ -328,6 +348,30 @@ class Background:
     def add_step(self, step: Step) -> None:
         """Add step to the background."""
         step.background = self
+        self.steps.append(step)
+
+
+@dataclass
+class Setup:
+    feature: Feature
+    line_number: int
+    steps: list[Step] = field(init=False, default_factory=list)
+
+    def add_step(self, step: Step) -> None:
+        """Add step to setup section"""
+        step.setup = self
+        self.steps.append(step)
+
+
+@dataclass
+class Teardown:
+    feature: Feature
+    line_number: int
+    steps: list[Step] = field(init=False, default_factory=list)
+
+    def add_step(self, step: Step) -> None:
+        """Add step to setup section"""
+        step.teardown = self
         self.steps.append(step)
 
 
